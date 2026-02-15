@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCategories, saveCategories } from "@/lib/categories";
 import { listAllArticles } from "@/lib/articles";
 import { isAuthenticated } from "@/lib/auth";
+import { cacheInvalidateAll } from "@/lib/cache";
 import { CategoriesData } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ export async function GET() {
     ).length,
   }));
 
-  return NextResponse.json({ categories: enriched });
+  return NextResponse.json(enriched);
 }
 
 export async function PUT(request: NextRequest) {
@@ -30,5 +31,6 @@ export async function PUT(request: NextRequest) {
 
   const body = (await request.json()) as CategoriesData;
   await saveCategories(body);
+  cacheInvalidateAll();
   return NextResponse.json({ success: true });
 }

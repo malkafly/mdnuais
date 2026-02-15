@@ -7,6 +7,7 @@ import {
   deleteArticle,
 } from "@/lib/articles";
 import { isAuthenticated } from "@/lib/auth";
+import { cacheInvalidateAll } from "@/lib/cache";
 import { ArticleMeta } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -47,6 +48,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     await saveArticleMeta(slug, meta);
   }
 
+  cacheInvalidateAll();
   return NextResponse.json({ success: true });
 }
 
@@ -58,5 +60,6 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 
   const { slug } = await params;
   await deleteArticle(slug);
+  cacheInvalidateAll();
   return NextResponse.json({ success: true });
 }
