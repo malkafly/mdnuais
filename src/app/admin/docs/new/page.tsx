@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -10,6 +10,14 @@ import { toast } from "sonner";
 import { slugify } from "@/lib/markdown";
 
 export default function NewDocPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-[var(--color-content-muted)]">{t("common.loading")}</div></div>}>
+      <NewDocForm />
+    </Suspense>
+  );
+}
+
+function NewDocForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const type = searchParams.get("type");
