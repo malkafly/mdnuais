@@ -83,7 +83,8 @@ export function DocEditor({ initialContent, onChange }: DocEditorProps) {
     ],
     content: initialContent,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      onChange((editor.storage as any).markdown.getMarkdown());
     },
     editorProps: {
       attributes: {

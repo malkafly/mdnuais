@@ -1,126 +1,61 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { SidebarData, SidebarItem } from "@/types";
+import { Category } from "@/types";
 import { t } from "@/lib/i18n";
 import { toast } from "sonner";
 import { slugify } from "@/lib/markdown";
 
-export default function NewDocPage() {
-  return (
-    <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-[var(--color-content-muted)]">{t("common.loading")}</div></div>}>
-      <NewDocForm />
-    </Suspense>
-  );
-}
-
-function NewDocForm() {
+export default function NewArticlePage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const type = searchParams.get("type");
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
-  const [section, setSection] = useState("");
-  const [externalUrl, setExternalUrl] = useState("");
-  const [sidebar, setSidebar] = useState<SidebarData | null>(null);
+  const [category, setCategory] = useState("");
+  const [status, setStatus] = useState<"published" | "draft">("draft");
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch("/api/docs")
+    fetch("/api/categories")
       .then((res) => res.json())
-      .then((data) => setSidebar(data))
+      .then((data) => setCategories(data))
       .catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (type !== "external") {
-      setSlug(slugify(title));
-    }
-  }, [title, type]);
-
-  const sections = sidebar
-    ? sidebar.items.filter((item: SidebarItem) => item.children && !item.external)
-    : [];
+    setSlug(slugify(title));
+  }, [title]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title) return;
+    if (!title || !slug) return;
     setLoading(true);
 
     try {
-      if (type === "section") {
-        const newSection: SidebarItem = {
-          title,
-          slug: slugify(title),
-          children: [],
-        };
-        const newItems = [...(sidebar?.items || []), newSection];
-        await fetch("/api/reorder", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items: newItems }),
-        });
-        toast.success(t("admin.docs.created"));
-        router.push("/admin/docs");
-        router.refresh();
-        return;
-      }
+      const content = `# ${title}\n\n`;
+      const meta = {
+        title,
+        slug,
+        category: category || null,
+        status,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        order: 0,
+      };
 
-      if (type === "external") {
-        const newLink: SidebarItem = {
-          title,
-          slug: slugify(title),
-          url: externalUrl,
-          external: true,
-        };
-        const newItems = [...(sidebar?.items || []), newLink];
-        await fetch("/api/reorder", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items: newItems }),
-        });
-        toast.success(t("admin.docs.created"));
-        router.push("/admin/docs");
-        router.refresh();
-        return;
-      }
-
-      const docSlug = section ? `${section}/${slug}` : slug;
-
-      await fetch(`/api/docs/${docSlug}`, {
+      const res = await fetch(`/api/articles/${slug}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: `# ${title}\n\n`,
-          title,
-        }),
+        body: JSON.stringify({ content, meta }),
       });
 
-      if (sidebar) {
-        const newItems = [...sidebar.items];
-        const newDocItem: SidebarItem = { title, slug: docSlug };
-
-        if (section) {
-          const sectionItem = newItems.find((i) => i.slug === section);
-          if (sectionItem && sectionItem.children) {
-            sectionItem.children.push(newDocItem);
-          }
-        } else {
-          newItems.push(newDocItem);
-        }
-
-        await fetch("/api/reorder", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items: newItems }),
-        });
-      }
+      if (!res.ok) throw new Error();
 
       toast.success(t("admin.docs.created"));
-      router.push(`/admin/docs/edit/${docSlug}`);
+      router.push(`/admin/docs/edit/${slug}`);
       router.refresh();
     } catch {
       toast.error(t("common.error"));
@@ -128,13 +63,6 @@ function NewDocForm() {
       setLoading(false);
     }
   };
-
-  const pageTitle =
-    type === "section"
-      ? t("admin.docs.newSection")
-      : type === "external"
-        ? t("admin.docs.externalLink")
-        : t("admin.docs.newDoc");
 
   return (
     <div>
@@ -145,83 +73,73 @@ function NewDocForm() {
         >
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-2xl font-bold">{pageTitle}</h1>
+        <h1 className="text-2xl font-bold">{t("admin.docs.newArticle")}</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="max-w-lg space-y-4">
         <div>
           <label htmlFor="title" className="block text-sm font-medium mb-1">
-            {type === "section" ? t("admin.docs.newSectionTitle") : t("admin.docs.docTitle")}
+            {t("admin.docs.docTitle")}
           </label>
           <input
             id="title"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder={
-              type === "section"
-                ? t("admin.docs.newSectionTitlePlaceholder")
-                : t("admin.docs.docTitlePlaceholder")
-            }
+            placeholder={t("admin.docs.docTitlePlaceholder")}
             className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
             autoFocus
             required
           />
         </div>
 
-        {type === "external" && (
-          <div>
-            <label htmlFor="url" className="block text-sm font-medium mb-1">
-              {t("admin.docs.externalUrl")}
-            </label>
-            <input
-              id="url"
-              type="url"
-              value={externalUrl}
-              onChange={(e) => setExternalUrl(e.target.value)}
-              placeholder={t("admin.docs.externalUrlPlaceholder")}
-              className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-              required
-            />
-          </div>
-        )}
+        <div>
+          <label htmlFor="slug" className="block text-sm font-medium mb-1">
+            {t("admin.docs.docSlug")}
+          </label>
+          <input
+            id="slug"
+            type="text"
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            placeholder={t("admin.docs.docSlugPlaceholder")}
+            className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+          />
+        </div>
 
-        {type !== "section" && type !== "external" && (
-          <>
-            <div>
-              <label htmlFor="slug" className="block text-sm font-medium mb-1">
-                {t("admin.docs.docSlug")}
-              </label>
-              <input
-                id="slug"
-                type="text"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                placeholder={t("admin.docs.docSlugPlaceholder")}
-                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-              />
-            </div>
+        <div>
+          <label htmlFor="category" className="block text-sm font-medium mb-1">
+            {t("admin.docs.category")}
+          </label>
+          <select
+            id="category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+          >
+            <option value="">{t("admin.docs.noCategory")}</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.title}
+              </option>
+            ))}
+          </select>
+        </div>
 
-            <div>
-              <label htmlFor="section" className="block text-sm font-medium mb-1">
-                {t("admin.docs.docSection")}
-              </label>
-              <select
-                id="section"
-                value={section}
-                onChange={(e) => setSection(e.target.value)}
-                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-              >
-                <option value="">{t("admin.docs.docSectionPlaceholder")}</option>
-                {sections.map((s: SidebarItem) => (
-                  <option key={s.slug} value={s.slug}>
-                    {s.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </>
-        )}
+        <div>
+          <label htmlFor="status" className="block text-sm font-medium mb-1">
+            {t("admin.docs.status")}
+          </label>
+          <select
+            id="status"
+            value={status}
+            onChange={(e) => setStatus(e.target.value as "published" | "draft")}
+            className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+          >
+            <option value="draft">{t("admin.docs.statusDraft")}</option>
+            <option value="published">{t("admin.docs.statusPublished")}</option>
+          </select>
+        </div>
 
         <div className="flex items-center gap-3 pt-2">
           <button

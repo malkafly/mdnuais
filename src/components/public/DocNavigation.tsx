@@ -16,7 +16,7 @@ export function DocNavigation({ navigation }: DocNavigationProps) {
     <div className="flex items-center justify-between mt-12 pt-6 border-t border-[var(--color-border)]">
       {prev ? (
         <Link
-          href={`/docs/${prev.slug}`}
+          href={`/articles/${prev.slug}`}
           className="flex items-center gap-2 text-sm text-[var(--color-content-muted)] hover:text-[var(--color-primary)] transition-colors group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
@@ -32,7 +32,7 @@ export function DocNavigation({ navigation }: DocNavigationProps) {
       )}
       {next ? (
         <Link
-          href={`/docs/${next.slug}`}
+          href={`/articles/${next.slug}`}
           className="flex items-center gap-2 text-sm text-[var(--color-content-muted)] hover:text-[var(--color-primary)] transition-colors text-right group"
         >
           <div>

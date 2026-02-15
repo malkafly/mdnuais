@@ -2,9 +2,23 @@
 
 import { useState, useEffect } from "react";
 import { Save, Plus, Trash2, Upload } from "lucide-react";
-import { SiteConfig, FooterLink } from "@/types";
+import { SiteConfig, FooterLink, NavbarLink, NavbarCta, HeroConfig, NavbarConfig } from "@/types";
 import { t } from "@/lib/i18n";
 import { toast } from "sonner";
+
+const defaultHero: HeroConfig = {
+  title: "Como podemos ajudar?",
+  subtitle: "Busque na nossa base de conhecimento",
+  background: "color",
+  backgroundColor: "#4F46E5",
+  backgroundImage: "",
+  textColor: "#FFFFFF",
+};
+
+const defaultNavbar: NavbarConfig = {
+  links: [],
+  cta: [],
+};
 
 const defaultConfig: SiteConfig = {
   name: "mdnuais",
@@ -14,6 +28,8 @@ const defaultConfig: SiteConfig = {
   footer: { text: "", links: [] },
   socialLinks: {},
   metadata: { title: "mdnuais", description: "" },
+  hero: defaultHero,
+  navbar: defaultNavbar,
 };
 
 export default function SettingsPage() {
@@ -25,7 +41,12 @@ export default function SettingsPage() {
     fetch("/api/config")
       .then((res) => res.json())
       .then((data) => {
-        setConfig({ ...defaultConfig, ...data });
+        setConfig({
+          ...defaultConfig,
+          ...data,
+          hero: { ...defaultHero, ...(data.hero || {}) },
+          navbar: { ...defaultNavbar, ...(data.navbar || {}) },
+        });
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -48,7 +69,7 @@ export default function SettingsPage() {
     }
   };
 
-  const handleImageUpload = async (field: "logo" | "favicon") => {
+  const handleImageUpload = async (field: "logo" | "favicon" | "heroBackground") => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
@@ -63,7 +84,15 @@ export default function SettingsPage() {
         const res = await fetch("/api/upload", { method: "POST", body: formData });
         if (!res.ok) throw new Error();
         const { url } = await res.json();
-        setConfig((prev) => ({ ...prev, [field]: url }));
+
+        if (field === "heroBackground") {
+          setConfig((prev) => ({
+            ...prev,
+            hero: { ...prev.hero!, backgroundImage: url },
+          }));
+        } else {
+          setConfig((prev) => ({ ...prev, [field]: url }));
+        }
       } catch {
         toast.error(t("common.error"));
       }
@@ -71,6 +100,84 @@ export default function SettingsPage() {
     input.click();
   };
 
+  const hero = config.hero || defaultHero;
+  const navbar = config.navbar || defaultNavbar;
+
+  const updateHero = (field: keyof HeroConfig, value: string) => {
+    setConfig((prev) => ({
+      ...prev,
+      hero: { ...prev.hero!, [field]: value },
+    }));
+  };
+
+  // Navbar links
+  const addNavbarLink = () => {
+    setConfig((prev) => ({
+      ...prev,
+      navbar: {
+        ...prev.navbar!,
+        links: [...prev.navbar!.links, { label: "", url: "" }],
+      },
+    }));
+  };
+
+  const removeNavbarLink = (index: number) => {
+    setConfig((prev) => ({
+      ...prev,
+      navbar: {
+        ...prev.navbar!,
+        links: prev.navbar!.links.filter((_, i) => i !== index),
+      },
+    }));
+  };
+
+  const updateNavbarLink = (index: number, field: keyof NavbarLink, value: string) => {
+    setConfig((prev) => ({
+      ...prev,
+      navbar: {
+        ...prev.navbar!,
+        links: prev.navbar!.links.map((link, i) =>
+          i === index ? { ...link, [field]: value } : link
+        ),
+      },
+    }));
+  };
+
+  // Navbar CTAs
+  const addNavbarCta = () => {
+    if (navbar.cta.length >= 2) return;
+    setConfig((prev) => ({
+      ...prev,
+      navbar: {
+        ...prev.navbar!,
+        cta: [...prev.navbar!.cta, { label: "", url: "", style: "primary" as const }],
+      },
+    }));
+  };
+
+  const removeNavbarCta = (index: number) => {
+    setConfig((prev) => ({
+      ...prev,
+      navbar: {
+        ...prev.navbar!,
+        cta: prev.navbar!.cta.filter((_, i) => i !== index),
+      },
+    }));
+  };
+
+  const updateNavbarCta = (index: number, field: keyof NavbarCta, value: string) => {
+    setConfig((prev) => ({
+      ...prev,
+      navbar: {
+        ...prev.navbar!,
+        cta: prev.navbar!.cta.map((cta, i) =>
+          i === index ? { ...cta, [field]: value } : cta
+        ),
+      },
+    }));
+  };
+
+  // Footer links
   const addFooterLink = () => {
     setConfig((prev) => ({
       ...prev,
@@ -126,6 +233,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="max-w-2xl space-y-8">
+        {/* Site Name */}
         <Section title={t("admin.settings.siteName")}>
           <input
             type="text"
@@ -136,6 +244,7 @@ export default function SettingsPage() {
           />
         </Section>
 
+        {/* Logo & Favicon */}
         <Section title="Logo & Favicon">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -171,6 +280,189 @@ export default function SettingsPage() {
           </div>
         </Section>
 
+        {/* Hero */}
+        <Section title={t("admin.settings.hero")}>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm text-[var(--color-content-muted)] mb-1">
+                {t("admin.settings.heroTitle")}
+              </label>
+              <input
+                type="text"
+                value={hero.title}
+                onChange={(e) => updateHero("title", e.target.value)}
+                placeholder="Como podemos ajudar?"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-[var(--color-content-muted)] mb-1">
+                {t("admin.settings.heroSubtitle")}
+              </label>
+              <input
+                type="text"
+                value={hero.subtitle}
+                onChange={(e) => updateHero("subtitle", e.target.value)}
+                placeholder="Busque na nossa base de conhecimento"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-[var(--color-content-muted)] mb-1">
+                {t("admin.settings.heroBackground")}
+              </label>
+              <select
+                value={hero.background}
+                onChange={(e) => updateHero("background", e.target.value)}
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+              >
+                <option value="color">{t("admin.settings.heroBgColor")}</option>
+                <option value="image">{t("admin.settings.heroBgImage")}</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm text-[var(--color-content-muted)] mb-1">
+                  {hero.background === "color" ? t("admin.settings.heroBgColorValue") : t("admin.settings.heroBgImage")}
+                </label>
+                {hero.background === "color" ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={hero.backgroundColor}
+                      onChange={(e) => updateHero("backgroundColor", e.target.value)}
+                      className="w-10 h-10 rounded cursor-pointer border-0"
+                    />
+                    <input
+                      type="text"
+                      value={hero.backgroundColor}
+                      onChange={(e) => updateHero("backgroundColor", e.target.value)}
+                      className="flex-1 px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    {hero.backgroundImage && (
+                      <img src={hero.backgroundImage} alt="Hero bg" className="w-full h-20 object-cover mb-2 rounded" />
+                    )}
+                    <button
+                      onClick={() => handleImageUpload("heroBackground")}
+                      className="flex items-center gap-2 px-3 py-2 text-sm border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-surface-sidebar)] transition-colors"
+                    >
+                      <Upload className="w-4 h-4" />
+                      {t("admin.settings.uploadImage")}
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm text-[var(--color-content-muted)] mb-1">
+                  {t("admin.settings.heroTextColor")}
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={hero.textColor}
+                    onChange={(e) => updateHero("textColor", e.target.value)}
+                    className="w-10 h-10 rounded cursor-pointer border-0"
+                  />
+                  <input
+                    type="text"
+                    value={hero.textColor}
+                    onChange={(e) => updateHero("textColor", e.target.value)}
+                    className="flex-1 px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </Section>
+
+        {/* Navbar Links */}
+        <Section title={t("admin.settings.navbarLinks")}>
+          <div className="space-y-2">
+            {navbar.links.map((link, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={link.label}
+                  onChange={(e) => updateNavbarLink(i, "label", e.target.value)}
+                  placeholder={t("admin.settings.linkLabel")}
+                  className="flex-1 px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                />
+                <input
+                  type="url"
+                  value={link.url}
+                  onChange={(e) => updateNavbarLink(i, "url", e.target.value)}
+                  placeholder={t("admin.settings.linkUrl")}
+                  className="flex-1 px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                />
+                <button
+                  onClick={() => removeNavbarLink(i)}
+                  className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={addNavbarLink}
+              className="flex items-center gap-2 px-3 py-2 text-sm border border-dashed border-[var(--color-border)] rounded-lg hover:bg-[var(--color-surface-sidebar)] transition-colors w-full justify-center"
+            >
+              <Plus className="w-4 h-4" />
+              {t("admin.settings.addNavbarLink")}
+            </button>
+          </div>
+        </Section>
+
+        {/* Navbar CTA Buttons */}
+        <Section title={t("admin.settings.navbarCta")}>
+          <div className="space-y-2">
+            {navbar.cta.map((cta, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={cta.label}
+                  onChange={(e) => updateNavbarCta(i, "label", e.target.value)}
+                  placeholder={t("admin.settings.ctaLabel")}
+                  className="flex-1 px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                />
+                <input
+                  type="url"
+                  value={cta.url}
+                  onChange={(e) => updateNavbarCta(i, "url", e.target.value)}
+                  placeholder={t("admin.settings.ctaUrl")}
+                  className="flex-1 px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                />
+                <select
+                  value={cta.style}
+                  onChange={(e) => updateNavbarCta(i, "style", e.target.value)}
+                  className="px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                >
+                  <option value="primary">{t("admin.settings.ctaPrimary")}</option>
+                  <option value="outline">{t("admin.settings.ctaOutline")}</option>
+                </select>
+                <button
+                  onClick={() => removeNavbarCta(i)}
+                  className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+            {navbar.cta.length < 2 && (
+              <button
+                onClick={addNavbarCta}
+                className="flex items-center gap-2 px-3 py-2 text-sm border border-dashed border-[var(--color-border)] rounded-lg hover:bg-[var(--color-surface-sidebar)] transition-colors w-full justify-center"
+              >
+                <Plus className="w-4 h-4" />
+                {t("admin.settings.addNavbarCta")}
+              </button>
+            )}
+          </div>
+        </Section>
+
+        {/* Colors */}
         <Section title={t("admin.settings.primaryColor")}>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -234,6 +526,7 @@ export default function SettingsPage() {
           </div>
         </Section>
 
+        {/* Footer */}
         <Section title={t("admin.settings.footerText")}>
           <input
             type="text"
@@ -282,6 +575,7 @@ export default function SettingsPage() {
           </div>
         </Section>
 
+        {/* Social Links */}
         <Section title={t("admin.settings.socialLinks")}>
           <div className="space-y-3">
             <SocialInput
@@ -331,6 +625,7 @@ export default function SettingsPage() {
           </div>
         </Section>
 
+        {/* SEO */}
         <Section title="SEO">
           <div className="space-y-3">
             <div>

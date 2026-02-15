@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Save } from "lucide-react";
 import { DocEditor } from "@/components/admin/DocEditor";
+import { Category, ArticleMeta } from "@/types";
 import { t } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -14,21 +15,37 @@ export default function EditDocPage() {
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [htmlContent, setHtmlContent] = useState("");
+  const [markdownContent, setMarkdownContent] = useState("");
+  const [category, setCategory] = useState("");
+  const [status, setStatus] = useState<"published" | "draft">("draft");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [meta, setMeta] = useState<ArticleMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/docs/${slug}`)
-      .then((res) => {
+    Promise.all([
+      fetch(`/api/articles/${slug}`).then((res) => {
         if (!res.ok) throw new Error();
         return res.json();
-      })
-      .then((data) => {
-        setContent(data.content);
-        const titleMatch = data.content.match(/^#\s+(.+)$/m);
-        if (titleMatch) setTitle(titleMatch[1]);
+      }),
+      fetch("/api/categories").then((r) => r.json()),
+    ])
+      .then(([data, cats]) => {
+        setContent(data.content || "");
+        setCategories(cats);
+
+        if (data.meta) {
+          setMeta(data.meta);
+          setTitle(data.meta.title);
+          setCategory(data.meta.category || "");
+          setStatus(data.meta.status || "draft");
+        } else {
+          const titleMatch = (data.content || "").match(/^#\s+(.+)$/m);
+          if (titleMatch) setTitle(titleMatch[1]);
+        }
+
         setLoading(false);
       })
       .catch(() => {
@@ -47,8 +64,8 @@ export default function EditDocPage() {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasChanges]);
 
-  const handleContentChange = useCallback((html: string) => {
-    setHtmlContent(html);
+  const handleContentChange = useCallback((md: string) => {
+    setMarkdownContent(md);
     setHasChanges(true);
   }, []);
 
@@ -56,10 +73,23 @@ export default function EditDocPage() {
     setSaving(true);
 
     try {
-      await fetch(`/api/docs/${slug}`, {
+      const updatedMeta: ArticleMeta = {
+        title,
+        slug,
+        category: category || null,
+        status,
+        createdAt: meta?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        order: meta?.order || 0,
+      };
+
+      await fetch(`/api/articles/${slug}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: htmlContent || content, title }),
+        body: JSON.stringify({
+          content: markdownContent || content,
+          meta: updatedMeta,
+        }),
       });
       setHasChanges(false);
       toast.success(t("admin.docs.saved"));
@@ -68,7 +98,7 @@ export default function EditDocPage() {
     } finally {
       setSaving(false);
     }
-  }, [slug, htmlContent, content, title]);
+  }, [slug, markdownContent, content, title, category, status, meta]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -117,21 +147,63 @@ export default function EditDocPage() {
         </button>
       </div>
 
-      <div className="mb-4">
-        <label htmlFor="doc-title" className="block text-sm font-medium mb-1">
-          {t("admin.docs.docTitle")}
-        </label>
-        <input
-          id="doc-title"
-          type="text"
-          value={title}
-          onChange={(e) => {
-            setTitle(e.target.value);
-            setHasChanges(true);
-          }}
-          placeholder={t("admin.docs.docTitlePlaceholder")}
-          className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label htmlFor="doc-title" className="block text-sm font-medium mb-1">
+            {t("admin.docs.docTitle")}
+          </label>
+          <input
+            id="doc-title"
+            type="text"
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              setHasChanges(true);
+            }}
+            placeholder={t("admin.docs.docTitlePlaceholder")}
+            className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="doc-category" className="block text-sm font-medium mb-1">
+            {t("admin.docs.category")}
+          </label>
+          <select
+            id="doc-category"
+            value={category}
+            onChange={(e) => {
+              setCategory(e.target.value);
+              setHasChanges(true);
+            }}
+            className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+          >
+            <option value="">{t("admin.docs.noCategory")}</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.title}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="doc-status" className="block text-sm font-medium mb-1">
+            {t("admin.docs.status")}
+          </label>
+          <select
+            id="doc-status"
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value as "published" | "draft");
+              setHasChanges(true);
+            }}
+            className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+          >
+            <option value="draft">{t("admin.docs.statusDraft")}</option>
+            <option value="published">{t("admin.docs.statusPublished")}</option>
+          </select>
+        </div>
       </div>
 
       <DocEditor initialContent={content} onChange={handleContentChange} />

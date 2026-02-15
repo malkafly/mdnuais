@@ -7,7 +7,11 @@ import Fuse from "fuse.js";
 import { SearchEntry, SearchResult } from "@/types";
 import { t } from "@/lib/i18n";
 
-export function SearchModal() {
+interface SearchModalProps {
+  variant?: "default" | "hero";
+}
+
+export function SearchModal({ variant = "default" }: SearchModalProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -88,7 +92,7 @@ export function SearchModal() {
   }, [query, search]);
 
   const navigate = (slug: string) => {
-    router.push(`/docs/${slug}`);
+    router.push(`/articles/${slug}`);
     setOpen(false);
   };
 
@@ -105,6 +109,21 @@ export function SearchModal() {
   };
 
   if (!open) {
+    if (variant === "hero") {
+      return (
+        <button
+          onClick={() => setOpen(true)}
+          className="flex items-center gap-3 w-full px-5 py-3.5 text-left bg-white/95 dark:bg-[var(--color-surface)] text-[var(--color-content-muted)] rounded-xl shadow-lg hover:shadow-xl transition-shadow"
+        >
+          <Search className="w-5 h-5" />
+          <span className="flex-1 text-base">{t("search.placeholder")}</span>
+          <kbd className="hidden sm:inline-flex text-xs px-2 py-1 bg-[var(--color-surface-sidebar)] border border-[var(--color-border)] rounded-md">
+            {t("common.searchShortcut")}
+          </kbd>
+        </button>
+      );
+    }
+
     return (
       <button
         onClick={() => setOpen(true)}
@@ -125,7 +144,7 @@ export function SearchModal() {
       onClick={() => setOpen(false)}
     >
       <div
-        className="w-full max-w-xl bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-2xl overflow-hidden"
+        className="w-full max-w-xl mx-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 px-4 border-b border-[var(--color-border)]">

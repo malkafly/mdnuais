@@ -3,13 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, FileText, Settings, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, FileText, FolderOpen, Settings, LogOut, Menu, X, ExternalLink } from "lucide-react";
 import { ThemeToggle } from "@/components/public/ThemeToggle";
 import { t } from "@/lib/i18n";
 
 const navItems = [
   { href: "/admin", label: "admin.sidebar.dashboard", icon: LayoutDashboard },
-  { href: "/admin/docs", label: "admin.sidebar.documents", icon: FileText },
+  { href: "/admin/docs", label: "admin.sidebar.articles", icon: FileText },
+  { href: "/admin/categories", label: "admin.sidebar.categories", icon: FolderOpen },
   { href: "/admin/settings", label: "admin.sidebar.settings", icon: Settings },
 ];
 
@@ -96,10 +97,11 @@ export function AdminSidebar() {
           </div>
           <Link
             href="/"
+            target="_blank"
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-[var(--color-content-muted)] hover:bg-[var(--color-surface)] transition-colors mb-1"
           >
-            <FileText className="w-4 h-4" />
-            Ver site
+            <ExternalLink className="w-4 h-4" />
+            {t("admin.sidebar.viewSite")}
           </Link>
           <button
             onClick={handleLogout}

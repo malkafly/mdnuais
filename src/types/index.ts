@@ -1,3 +1,5 @@
+// === Site Config ===
+
 export interface SiteConfig {
   name: string;
   logo: string;
@@ -20,6 +22,8 @@ export interface SiteConfig {
     title: string;
     description: string;
   };
+  hero?: HeroConfig;
+  navbar?: NavbarConfig;
 }
 
 export interface FooterLink {
@@ -27,30 +31,74 @@ export interface FooterLink {
   url: string;
 }
 
-export interface SidebarItem {
+export interface HeroConfig {
   title: string;
-  slug: string;
-  url?: string;
-  external?: boolean;
-  children?: SidebarItem[];
+  subtitle: string;
+  background: "color" | "image";
+  backgroundColor: string;
+  backgroundImage: string;
+  textColor: string;
 }
 
-export interface SidebarData {
-  items: SidebarItem[];
+export interface NavbarLink {
+  label: string;
+  url: string;
 }
 
-export interface DocContent {
-  content: string;
-  slug: string;
-  title: string;
-  lastModified?: string;
+export interface NavbarCta {
+  label: string;
+  url: string;
+  style: "primary" | "outline";
 }
+
+export interface NavbarConfig {
+  links: NavbarLink[];
+  cta: NavbarCta[];
+}
+
+// === Categories ===
+
+export interface Category {
+  id: string;
+  title: string;
+  description: string;
+  slug: string;
+  icon: string;
+  iconBgColor: string;
+  order: number;
+}
+
+export interface CategoryWithCount extends Category {
+  articleCount: number;
+}
+
+export interface CategoriesData {
+  categories: Category[];
+}
+
+// === Articles ===
+
+export type ArticleStatus = "published" | "draft";
+
+export interface ArticleMeta {
+  title: string;
+  slug: string;
+  category: string | null;
+  status: ArticleStatus;
+  createdAt: string;
+  updatedAt: string;
+  order: number;
+}
+
+// === Content ===
 
 export interface Heading {
   id: string;
   text: string;
   level: number;
 }
+
+// === Search ===
 
 export interface SearchEntry {
   title: string;
@@ -72,14 +120,12 @@ export interface SearchResult {
   }>;
 }
 
-export interface CacheEntry<T> {
-  data: T;
-  timestamp: number;
-}
+// === UI ===
 
 export interface BreadcrumbItem {
   title: string;
   slug?: string;
+  url?: string;
 }
 
 export interface DocNavItem {
@@ -90,4 +136,9 @@ export interface DocNavItem {
 export interface DocNavigation {
   prev: DocNavItem | null;
   next: DocNavItem | null;
+}
+
+export interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
 }

@@ -4,7 +4,8 @@
       "Bash(npx create-next-app@14:*)",
       "Bash(npm install:*)",
       "Bash(npx next build:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }
