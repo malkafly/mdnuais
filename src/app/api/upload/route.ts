@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { uploadImage } from "@/lib/storage";
 import { isAuthenticated } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"];
 const MAX_SIZE = 5 * 1024 * 1024;
 

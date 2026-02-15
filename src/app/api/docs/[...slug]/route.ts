@@ -4,6 +4,8 @@ import { isAuthenticated } from "@/lib/auth";
 import { cacheGet, cacheSet, cacheInvalidate, cacheInvalidatePrefix } from "@/lib/cache";
 import { getSidebar, saveSidebar } from "@/lib/config";
 
+export const dynamic = "force-dynamic";
+
 interface RouteParams {
   params: Promise<{ slug: string[] }>;
 }

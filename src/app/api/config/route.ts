@@ -3,6 +3,8 @@ import { getConfig, saveConfig } from "@/lib/config";
 import { isAuthenticated } from "@/lib/auth";
 import { SiteConfig } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const config = await getConfig();
   return NextResponse.json(config);

@@ -3,6 +3,8 @@ import { saveSidebar } from "@/lib/config";
 import { isAuthenticated } from "@/lib/auth";
 import { SidebarData } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 export async function PUT(request: NextRequest) {
   const authed = await isAuthenticated();
   if (!authed) {

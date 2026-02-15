@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, FileText, Settings, LogOut, Menu, X } from "lucide-react";
+import { ThemeToggle } from "@/components/public/ThemeToggle";
 import { t } from "@/lib/i18n";
 
 const navItems = [
@@ -89,6 +90,10 @@ export function AdminSidebar() {
         </nav>
 
         <div className="p-2 border-t border-[var(--color-border)]">
+          <div className="flex items-center justify-between px-3 py-2">
+            <span className="text-xs text-[var(--color-content-muted)]">{t("theme.toggle")}</span>
+            <ThemeToggle />
+          </div>
           <Link
             href="/"
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-[var(--color-content-muted)] hover:bg-[var(--color-surface)] transition-colors mb-1"
