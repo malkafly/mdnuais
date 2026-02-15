@@ -27,7 +27,7 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
           {cat.icon && (
             <div
               className="w-12 h-12 rounded-lg flex items-center justify-center mb-4 [&_svg]:w-6 [&_svg]:h-6"
-              style={{ backgroundColor: cat.iconBgColor || "#EEF2FF" }}
+              style={{ backgroundColor: cat.iconBgColor || "#EEF2FF", color: "#000" }}
             >
               <SafeSvgIcon svg={cat.icon} />
             </div>

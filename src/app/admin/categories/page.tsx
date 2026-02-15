@@ -144,7 +144,7 @@ export default function AdminCategoriesPage() {
                 {cat.icon && (
                   <div
                     className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 [&_svg]:w-5 [&_svg]:h-5"
-                    style={{ backgroundColor: cat.iconBgColor || "#EEF2FF" }}
+                    style={{ backgroundColor: cat.iconBgColor || "#EEF2FF", color: "#000" }}
                     dangerouslySetInnerHTML={{ __html: cat.icon }}
                   />
                 )}

@@ -59,7 +59,7 @@ export default async function CategoryPage({ params }: PageProps) {
           {cleanIcon && (
             <div
               className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 [&_svg]:w-7 [&_svg]:h-7"
-              style={{ backgroundColor: category.iconBgColor || "#EEF2FF" }}
+              style={{ backgroundColor: category.iconBgColor || "#EEF2FF", color: "#000" }}
               dangerouslySetInnerHTML={{ __html: cleanIcon }}
             />
           )}
