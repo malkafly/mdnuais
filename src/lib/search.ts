@@ -15,9 +15,8 @@ export async function buildSearchIndex(): Promise<SearchEntry[]> {
     getCategories(),
   ]);
 
-  const categoryMap = new Map(
-    categoriesData.categories.map((c) => [c.id, c.title])
-  );
+  const allCategories = categoriesData.categories;
+  const categoryMap = new Map(allCategories.map((c) => [c.id, c]));
 
   const entries: SearchEntry[] = [];
 
@@ -27,12 +26,21 @@ export async function buildSearchIndex(): Promise<SearchEntry[]> {
 
     const headings = extractHeadings(content);
     const title = extractTitle(content) || article.title;
-    const categoryTitle = article.category
-      ? categoryMap.get(article.category) || ""
-      : "";
-    const breadcrumb = categoryTitle
-      ? `${categoryTitle} > ${article.title}`
-      : article.title;
+
+    let breadcrumb = article.title;
+    if (article.category) {
+      const cat = categoryMap.get(article.category);
+      if (cat) {
+        if (cat.parentId) {
+          const parent = categoryMap.get(cat.parentId);
+          breadcrumb = parent
+            ? `${parent.title} > ${cat.title} > ${article.title}`
+            : `${cat.title} > ${article.title}`;
+        } else {
+          breadcrumb = `${cat.title} > ${article.title}`;
+        }
+      }
+    }
 
     entries.push({
       title,

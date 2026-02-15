@@ -75,6 +75,9 @@ const pt = {
       catDescriptionPlaceholder: "Breve descrição da categoria",
       catIcon: "Ícone SVG",
       catIconBgColor: "Cor de fundo do ícone",
+      parentCategory: "Categoria pai",
+      noParent: "Nenhuma (categoria raiz)",
+      addSubcategory: "Adicionar subcategoria",
     },
     docs: {
       title: "Artigos",
@@ -209,6 +212,7 @@ const pt = {
       importPartial: "Importação concluída com alertas",
       importError: "Erro durante a importação",
       categoriesCreated: "Categorias criadas",
+      subcategoriesCreated: "Subcategorias criadas",
       categoriesExisting: "Categorias existentes",
       articlesCreated: "Artigos criados",
       articlesSkipped: "Artigos pulados",

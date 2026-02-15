@@ -50,12 +50,27 @@ export default async function ArticlePage({ params }: PageProps) {
 
   if (!content) notFound();
 
+  const allCategories = categoriesData.categories;
   const category = meta?.category
-    ? getCategoryById(categoriesData.categories, meta.category)
+    ? getCategoryById(allCategories, meta.category)
+    : null;
+
+  // Resolve parent if category is a subcategory
+  const parentCategory = category?.parentId
+    ? getCategoryById(allCategories, category.parentId)
     : null;
 
   const breadcrumbItems: { title: string; url?: string }[] = [{ title: "Home", url: "/" }];
-  if (category) {
+  if (parentCategory && category) {
+    breadcrumbItems.push({
+      title: parentCategory.title,
+      url: `/categories/${parentCategory.slug}`,
+    });
+    breadcrumbItems.push({
+      title: category.title,
+      url: `/categories/${parentCategory.slug}/${category.slug}`,
+    });
+  } else if (category) {
     breadcrumbItems.push({
       title: category.title,
       url: `/categories/${category.slug}`,

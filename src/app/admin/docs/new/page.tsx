@@ -124,11 +124,21 @@ export default function NewArticlePage() {
             className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
           >
             <option value="">{t("admin.docs.noCategory")}</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.title}
-              </option>
-            ))}
+            {categories
+              .filter((c) => !c.parentId)
+              .map((parent) => {
+                const subs = categories.filter((c) => c.parentId === parent.id);
+                return [
+                  <option key={parent.id} value={parent.id}>
+                    {parent.title}
+                  </option>,
+                  ...subs.map((sub) => (
+                    <option key={sub.id} value={sub.id}>
+                      &nbsp;&nbsp;{parent.title} &gt; {sub.title}
+                    </option>
+                  )),
+                ];
+              })}
           </select>
         </div>
 

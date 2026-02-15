@@ -4,6 +4,7 @@ import { sanitizeSvg } from "@/lib/sanitize-svg";
 
 interface CategoryGridProps {
   categories: CategoryWithCount[];
+  parentSlug?: string;
 }
 
 function SafeSvgIcon({ svg, className }: { svg: string; className?: string }) {
@@ -11,7 +12,7 @@ function SafeSvgIcon({ svg, className }: { svg: string; className?: string }) {
   return <div className={className} dangerouslySetInnerHTML={{ __html: clean }} />;
 }
 
-export function CategoryGrid({ categories }: CategoryGridProps) {
+export function CategoryGrid({ categories, parentSlug }: CategoryGridProps) {
   if (categories.length === 0) return null;
 
   return (
@@ -19,7 +20,7 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
       {categories.map((cat) => (
         <Link
           key={cat.id}
-          href={`/categories/${cat.slug}`}
+          href={parentSlug ? `/categories/${parentSlug}/${cat.slug}` : `/categories/${cat.slug}`}
           className="group block p-6 border border-[var(--color-border)] rounded-xl hover:border-[var(--color-primary)] transition-all hover:-translate-y-0.5 hover:shadow-lg"
         >
           {cat.icon && (

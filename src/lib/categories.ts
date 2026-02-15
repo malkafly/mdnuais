@@ -39,3 +39,25 @@ export function getCategoryById(
 ): Category | undefined {
   return categories.find((c) => c.id === id);
 }
+
+export function getTopLevelCategories(categories: Category[]): Category[] {
+  return categories.filter((c) => !c.parentId);
+}
+
+export function getSubcategories(
+  categories: Category[],
+  parentId: string
+): Category[] {
+  return categories
+    .filter((c) => c.parentId === parentId)
+    .sort((a, b) => a.order - b.order);
+}
+
+export function getSubcategoryIds(
+  categories: Category[],
+  parentId: string
+): string[] {
+  return categories
+    .filter((c) => c.parentId === parentId)
+    .map((c) => c.id);
+}

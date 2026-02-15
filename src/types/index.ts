@@ -69,6 +69,7 @@ export interface Category {
   icon: string;
   iconBgColor: string;
   order: number;
+  parentId?: string | null;
 }
 
 export interface CategoryWithCount extends Category {

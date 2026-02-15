@@ -9,6 +9,7 @@ interface ImportResult {
   success: boolean;
   categoriesCreated: string[];
   categoriesExisting: string[];
+  subcategoriesCreated: string[];
   articlesCreated: string[];
   articlesSkipped: string[];
   articlesOverwritten: string[];
@@ -100,10 +101,14 @@ export default function ImportPage() {
           <p className="font-semibold mb-1">{t("admin.import.expectedStructure")}:</p>
           <p>arquivo.zip/</p>
           <p className="ml-4">categoria-1/</p>
-          <p className="ml-8">artigo-1.md</p>
-          <p className="ml-8">artigo-2.md</p>
+          <p className="ml-8">subcategoria-a/</p>
+          <p className="ml-12">artigo-1.md</p>
+          <p className="ml-12">artigo-2.md</p>
+          <p className="ml-8">subcategoria-b/</p>
+          <p className="ml-12">artigo-3.md</p>
+          <p className="ml-8">artigo-direto.md</p>
           <p className="ml-4">categoria-2/</p>
-          <p className="ml-8">artigo-3.md</p>
+          <p className="ml-8">artigo-4.md</p>
         </div>
 
         {/* Drop zone */}
@@ -261,6 +266,12 @@ export default function ImportPage() {
                 <p className="text-lg font-bold text-green-500">{result.categoriesCreated.length}</p>
               </div>
             )}
+            {result.subcategoriesCreated && result.subcategoriesCreated.length > 0 && (
+              <div className="bg-green-500/10 rounded-lg p-3">
+                <p className="text-xs text-green-400">{t("admin.import.subcategoriesCreated")}</p>
+                <p className="text-lg font-bold text-green-500">{result.subcategoriesCreated.length}</p>
+              </div>
+            )}
             {result.categoriesExisting.length > 0 && (
               <div className="bg-blue-500/10 rounded-lg p-3">
                 <p className="text-xs text-blue-400">{t("admin.import.categoriesExisting")}</p>
@@ -309,6 +320,14 @@ export default function ImportPage() {
                   <p className="font-semibold text-green-400 mb-1">{t("admin.import.categoriesCreated")}:</p>
                   <ul className="list-disc list-inside text-[var(--color-content-muted)] space-y-0.5">
                     {result.categoriesCreated.map((c) => <li key={c}>{c}</li>)}
+                  </ul>
+                </div>
+              )}
+              {result.subcategoriesCreated && result.subcategoriesCreated.length > 0 && (
+                <div>
+                  <p className="font-semibold text-green-400 mb-1">{t("admin.import.subcategoriesCreated")}:</p>
+                  <ul className="list-disc list-inside text-[var(--color-content-muted)] space-y-0.5">
+                    {result.subcategoriesCreated.map((c) => <li key={c}>{c}</li>)}
                   </ul>
                 </div>
               )}

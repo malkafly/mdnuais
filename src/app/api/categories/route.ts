@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCategories, saveCategories } from "@/lib/categories";
+import { getCategories, saveCategories, getSubcategoryIds } from "@/lib/categories";
 import { listAllArticles } from "@/lib/articles";
 import { isAuthenticated } from "@/lib/auth";
 import { cacheInvalidateAll } from "@/lib/cache";
@@ -13,12 +13,22 @@ export async function GET() {
     listAllArticles(),
   ]);
 
-  const enriched = categoriesData.categories.map((cat) => ({
-    ...cat,
-    articleCount: articles.filter(
-      (a) => a.category === cat.id && a.status === "published"
-    ).length,
-  }));
+  const allCategories = categoriesData.categories;
+  const publishedArticles = articles.filter((a) => a.status === "published");
+
+  const enriched = allCategories.map((cat) => {
+    // For top-level categories, count articles in self + all subcategories
+    const relevantIds = !cat.parentId
+      ? [cat.id, ...getSubcategoryIds(allCategories, cat.id)]
+      : [cat.id];
+
+    return {
+      ...cat,
+      articleCount: publishedArticles.filter((a) =>
+        a.category && relevantIds.includes(a.category)
+      ).length,
+    };
+  });
 
   return NextResponse.json(enriched, {
     headers: { "Cache-Control": "no-store" },

@@ -42,8 +42,15 @@ export default function AdminDocsPage() {
   const getCategoryName = (catId: string | null) => {
     if (!catId) return t("admin.docs.noCategory");
     const cat = categories.find((c) => c.id === catId);
-    return cat?.title || catId;
+    if (!cat) return catId;
+    if (cat.parentId) {
+      const parent = categories.find((c) => c.id === cat.parentId);
+      return parent ? `${parent.title} > ${cat.title}` : cat.title;
+    }
+    return cat.title;
   };
+
+  const topLevelCategories = categories.filter((c) => !c.parentId);
 
   const filtered = articles.filter((a) => {
     if (filterCategory && a.category !== filterCategory) return false;
@@ -80,11 +87,19 @@ export default function AdminDocsPage() {
         >
           <option value="">{t("admin.docs.allCategories")}</option>
           <option value="__none__">{t("admin.docs.noCategory")}</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.title}
-            </option>
-          ))}
+          {topLevelCategories.map((parent) => {
+            const subs = categories.filter((c) => c.parentId === parent.id);
+            return [
+              <option key={parent.id} value={parent.id}>
+                {parent.title}
+              </option>,
+              ...subs.map((sub) => (
+                <option key={sub.id} value={sub.id}>
+                  &nbsp;&nbsp;{parent.title} &gt; {sub.title}
+                </option>
+              )),
+            ];
+          })}
         </select>
         <select
           value={filterStatus}

@@ -43,12 +43,19 @@ interface ImportResult {
   success: boolean;
   categoriesCreated: string[];
   categoriesExisting: string[];
+  subcategoriesCreated: string[];
   articlesCreated: string[];
   articlesSkipped: string[];
   articlesOverwritten: string[];
   errors: string[];
   totalFiles: number;
   totalProcessed: number;
+}
+
+interface FolderEntry {
+  filename: string;
+  path: string;
+  subfolder?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -91,6 +98,7 @@ export async function POST(request: NextRequest) {
         success: true,
         categoriesCreated: [],
         categoriesExisting: [],
+        subcategoriesCreated: [],
         articlesCreated: [],
         articlesSkipped: [],
         articlesOverwritten: [],
@@ -101,36 +109,37 @@ export async function POST(request: NextRequest) {
     }
 
     // Detect if ZIP has a wrapper root folder
-    // e.g., all paths start with "manuais/agenda/file.md" -> strip "manuais/"
     const parts = mdPaths.map((p) => p.split("/"));
     const minDepth = Math.min(...parts.map((p) => p.length));
 
     let stripPrefix = "";
     if (minDepth >= 3) {
-      // Check if all entries share the same first directory
       const firstDirs = new Set(parts.map((p) => p[0]));
       if (firstDirs.size === 1) {
         stripPrefix = parts[0][0] + "/";
       }
     }
 
-    // Build folder -> files map
-    const folderMap = new Map<string, { filename: string; path: string }[]>();
+    // Build folder -> files map, supporting subcategories
+    // Structure: folderMap[topFolder] = [{ filename, path, subfolder? }]
+    const folderMap = new Map<string, FolderEntry[]>();
 
     for (const mdPath of mdPaths) {
       const cleanPath = stripPrefix ? mdPath.slice(stripPrefix.length) : mdPath;
       const segments = cleanPath.split("/");
 
-      // Must have at least folder/file.md structure
       if (segments.length < 2) continue;
 
-      const folder = segments[0];
+      const topFolder = segments[0];
       const filename = segments[segments.length - 1];
 
-      if (!folderMap.has(folder)) {
-        folderMap.set(folder, []);
+      // Detect subcategory: folder/subfolder/file.md (3 segments)
+      const subfolder = segments.length >= 3 ? segments[1] : undefined;
+
+      if (!folderMap.has(topFolder)) {
+        folderMap.set(topFolder, []);
       }
-      folderMap.get(folder)!.push({ filename, path: mdPath });
+      folderMap.get(topFolder)!.push({ filename, path: mdPath, subfolder });
     }
 
     // Load existing data
@@ -143,6 +152,7 @@ export async function POST(request: NextRequest) {
       success: true,
       categoriesCreated: [],
       categoriesExisting: [],
+      subcategoriesCreated: [],
       articlesCreated: [],
       articlesSkipped: [],
       articlesOverwritten: [],
@@ -151,32 +161,90 @@ export async function POST(request: NextRequest) {
       totalProcessed: 0,
     };
 
-    // Create categories
-    const categoryMap = new Map<string, string>(); // folder slug -> category id
+    // Create categories and subcategories
+    const categoryMap = new Map<string, string>(); // "folder" or "folder/subfolder" -> category id
     const newCategories: Category[] = [...existingCategories];
     let colorIndex = existingCategories.length;
 
     const sortedFolders = Array.from(folderMap.keys()).sort();
 
     for (const folder of sortedFolders) {
-      const existing = existingCategories.find((c) => c.slug === folder);
-      if (existing) {
-        categoryMap.set(folder, existing.id);
-        result.categoriesExisting.push(existing.title);
+      // Create or find top-level category
+      const existingParent = existingCategories.find(
+        (c) => c.slug === folder && !c.parentId
+      );
+      let parentId: string;
+
+      if (existingParent) {
+        parentId = existingParent.id;
+        categoryMap.set(folder, parentId);
+        if (!result.categoriesExisting.includes(existingParent.title)) {
+          result.categoriesExisting.push(existingParent.title);
+        }
       } else {
-        const newCat: Category = {
-          id: crypto.randomUUID(),
-          title: titleCase(folder),
-          description: "",
-          slug: folder,
-          icon: DEFAULT_ICON,
-          iconBgColor: COLOR_PALETTE[colorIndex % COLOR_PALETTE.length],
-          order: newCategories.length,
-        };
-        newCategories.push(newCat);
-        categoryMap.set(folder, newCat.id);
-        result.categoriesCreated.push(newCat.title);
-        colorIndex++;
+        // Check if already created in this import
+        const alreadyCreated = newCategories.find(
+          (c) => c.slug === folder && !c.parentId
+        );
+        if (alreadyCreated) {
+          parentId = alreadyCreated.id;
+          categoryMap.set(folder, parentId);
+        } else {
+          const newCat: Category = {
+            id: crypto.randomUUID(),
+            title: titleCase(folder),
+            description: "",
+            slug: folder,
+            icon: DEFAULT_ICON,
+            iconBgColor: COLOR_PALETTE[colorIndex % COLOR_PALETTE.length],
+            order: newCategories.filter((c) => !c.parentId).length,
+            parentId: null,
+          };
+          newCategories.push(newCat);
+          parentId = newCat.id;
+          categoryMap.set(folder, parentId);
+          result.categoriesCreated.push(newCat.title);
+          colorIndex++;
+        }
+      }
+
+      // Collect unique subfolders for this top-level folder
+      const files = folderMap.get(folder)!;
+      const subfolders = new Set(
+        files.filter((f) => f.subfolder).map((f) => f.subfolder!)
+      );
+
+      for (const sub of Array.from(subfolders).sort()) {
+        const subKey = `${folder}/${sub}`;
+        const existingSub = existingCategories.find(
+          (c) => c.slug === sub && c.parentId === parentId
+        );
+
+        if (existingSub) {
+          categoryMap.set(subKey, existingSub.id);
+        } else {
+          const alreadyCreatedSub = newCategories.find(
+            (c) => c.slug === sub && c.parentId === parentId
+          );
+          if (alreadyCreatedSub) {
+            categoryMap.set(subKey, alreadyCreatedSub.id);
+          } else {
+            const newSub: Category = {
+              id: crypto.randomUUID(),
+              title: titleCase(sub),
+              description: "",
+              slug: sub,
+              icon: DEFAULT_ICON,
+              iconBgColor: COLOR_PALETTE[colorIndex % COLOR_PALETTE.length],
+              order: newCategories.filter((c) => c.parentId === parentId).length,
+              parentId,
+            };
+            newCategories.push(newSub);
+            categoryMap.set(subKey, newSub.id);
+            result.subcategoriesCreated.push(`${titleCase(folder)} > ${newSub.title}`);
+            colorIndex++;
+          }
+        }
       }
     }
 
@@ -193,51 +261,63 @@ export async function POST(request: NextRequest) {
 
     const folderEntries = Array.from(folderMap.entries());
     for (const [folder, files] of folderEntries) {
-      const categoryId = categoryMap.get(folder)!;
-      const sortedFiles = [...files].sort((a: { filename: string }, b: { filename: string }) => a.filename.localeCompare(b.filename));
+      // Group files by their target category (top-level or subcategory)
+      const groupedByTarget = new Map<string, FolderEntry[]>();
 
-      for (let i = 0; i < sortedFiles.length; i++) {
-        const { filename, path } = sortedFiles[i];
-        const slug = filename.replace(/\.md$/, "");
+      for (const file of files) {
+        const targetKey = file.subfolder ? `${folder}/${file.subfolder}` : folder;
+        if (!groupedByTarget.has(targetKey)) {
+          groupedByTarget.set(targetKey, []);
+        }
+        groupedByTarget.get(targetKey)!.push(file);
+      }
 
-        try {
-          const entry = zip.file(path);
-          if (!entry) continue;
+      for (const [targetKey, targetFiles] of Array.from(groupedByTarget.entries())) {
+        const categoryId = categoryMap.get(targetKey)!;
+        const sortedFiles = [...targetFiles].sort((a, b) => a.filename.localeCompare(b.filename));
 
-          const content = await entry.async("string");
+        for (let i = 0; i < sortedFiles.length; i++) {
+          const { filename, path } = sortedFiles[i];
+          const slug = filename.replace(/\.md$/, "");
 
-          // Check for conflicts
-          if (existingSlugs.has(slug)) {
-            if (conflictStrategy === "skip") {
-              result.articlesSkipped.push(slug);
-              result.totalProcessed++;
-              continue;
+          try {
+            const entry = zip.file(path);
+            if (!entry) continue;
+
+            const content = await entry.async("string");
+
+            // Check for conflicts
+            if (existingSlugs.has(slug)) {
+              if (conflictStrategy === "skip") {
+                result.articlesSkipped.push(slug);
+                result.totalProcessed++;
+                continue;
+              }
             }
-            // overwrite - will proceed
+
+            const title = extractTitle(content) || titleCase(slug);
+            const now = new Date().toISOString();
+
+            const meta: ArticleMeta = {
+              title,
+              slug,
+              category: categoryId,
+              status: defaultStatus as "published" | "draft",
+              createdAt: now,
+              updatedAt: now,
+              order: i,
+            };
+
+            articleTasks.push({
+              slug,
+              content,
+              meta,
+              isOverwrite: existingSlugs.has(slug),
+            });
+          } catch (err) {
+            result.errors.push(`Error processing ${path}: ${err instanceof Error ? err.message : String(err)}`);
+            result.totalProcessed++;
           }
-
-          const title = extractTitle(content) || titleCase(slug);
-          const now = new Date().toISOString();
-
-          const meta: ArticleMeta = {
-            title,
-            slug,
-            category: categoryId,
-            status: defaultStatus as "published" | "draft",
-            createdAt: now,
-            updatedAt: now,
-            order: i,
-          };
-
-          articleTasks.push({
-            slug,
-            content,
-            meta,
-            isOverwrite: existingSlugs.has(slug),
-          });
-        } catch (err) {
-          result.errors.push(`Error processing ${path}: ${err instanceof Error ? err.message : String(err)}`);
-          result.totalProcessed++;
         }
       }
     }

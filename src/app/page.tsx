@@ -24,12 +24,23 @@ export default async function Home() {
     listPublishedArticles(),
   ]);
 
-  const categoriesWithCount = categoriesData.categories
+  const allCategories = categoriesData.categories;
+  const topLevel = allCategories.filter((c) => !c.parentId);
+
+  const categoriesWithCount = topLevel
     .sort((a, b) => a.order - b.order)
-    .map((cat) => ({
-      ...cat,
-      articleCount: articles.filter((a) => a.category === cat.id).length,
-    }));
+    .map((cat) => {
+      const subIds = allCategories
+        .filter((c) => c.parentId === cat.id)
+        .map((c) => c.id);
+      const relevantIds = [cat.id, ...subIds];
+      return {
+        ...cat,
+        articleCount: articles.filter(
+          (a) => a.category && relevantIds.includes(a.category)
+        ).length,
+      };
+    });
 
   return (
     <div className="min-h-screen flex flex-col">
