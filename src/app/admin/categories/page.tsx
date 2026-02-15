@@ -23,13 +23,13 @@ export default function AdminCategoriesPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  const handleSave = async () => {
+  const saveCategories = async (cats: Category[]) => {
     setSaving(true);
     try {
       const res = await fetch("/api/categories", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ categories }),
+        body: JSON.stringify({ categories: cats }),
       });
       if (!res.ok) throw new Error();
       toast.success(t("admin.categories.saved"));
@@ -39,6 +39,8 @@ export default function AdminCategoriesPage() {
       setSaving(false);
     }
   };
+
+  const handleSave = () => saveCategories(categories);
 
   const addCategory = () => {
     const id = crypto.randomUUID();
@@ -57,8 +59,10 @@ export default function AdminCategoriesPage() {
 
   const removeCategory = (id: string) => {
     if (!confirm(t("admin.categories.deleteConfirm"))) return;
-    setCategories((prev) => prev.filter((c) => c.id !== id));
+    const updated = categories.filter((c) => c.id !== id);
+    setCategories(updated);
     if (editingId === id) setEditingId(null);
+    saveCategories(updated);
   };
 
   const [manualSlugs, setManualSlugs] = useState<Set<string>>(new Set());
