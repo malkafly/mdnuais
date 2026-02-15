@@ -5,5 +5,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const index = await buildSearchIndex();
-  return NextResponse.json(index);
+  return NextResponse.json(index, {
+    headers: { "Cache-Control": "no-store" },
+  });
 }

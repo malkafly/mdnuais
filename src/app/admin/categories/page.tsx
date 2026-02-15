@@ -61,12 +61,17 @@ export default function AdminCategoriesPage() {
     if (editingId === id) setEditingId(null);
   };
 
+  const [manualSlugs, setManualSlugs] = useState<Set<string>>(new Set());
+
   const updateCategory = (id: string, field: keyof Category, value: string | number) => {
+    if (field === "slug") {
+      setManualSlugs((prev) => new Set(prev).add(id));
+    }
     setCategories((prev) =>
       prev.map((c) => {
         if (c.id !== id) return c;
         const updated = { ...c, [field]: value };
-        if (field === "title" && !c.slug) {
+        if (field === "title" && !manualSlugs.has(id)) {
           updated.slug = slugify(value as string);
         }
         return updated;

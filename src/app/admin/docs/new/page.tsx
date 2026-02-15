@@ -17,6 +17,7 @@ export default function NewArticlePage() {
   const [status, setStatus] = useState<"published" | "draft">("draft");
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
+  const [slugManual, setSlugManual] = useState(false);
 
   useEffect(() => {
     fetch("/api/categories")
@@ -26,8 +27,10 @@ export default function NewArticlePage() {
   }, []);
 
   useEffect(() => {
-    setSlug(slugify(title));
-  }, [title]);
+    if (!slugManual) {
+      setSlug(slugify(title));
+    }
+  }, [title, slugManual]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,7 +104,10 @@ export default function NewArticlePage() {
             id="slug"
             type="text"
             value={slug}
-            onChange={(e) => setSlug(e.target.value)}
+            onChange={(e) => {
+              setSlugManual(true);
+              setSlug(e.target.value);
+            }}
             placeholder={t("admin.docs.docSlugPlaceholder")}
             className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
           />

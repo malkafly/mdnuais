@@ -8,7 +8,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const config = await getConfig();
-  return NextResponse.json(config);
+  return NextResponse.json(config, {
+    headers: { "Cache-Control": "no-store" },
+  });
 }
 
 export async function PUT(request: NextRequest) {

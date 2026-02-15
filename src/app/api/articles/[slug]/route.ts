@@ -28,7 +28,9 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ content: content || "", meta });
+  return NextResponse.json({ content: content || "", meta }, {
+    headers: { "Cache-Control": "no-store" },
+  });
 }
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {

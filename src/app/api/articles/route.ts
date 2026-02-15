@@ -17,5 +17,7 @@ export async function GET(request: NextRequest) {
     articles = articles.filter((a) => a.status === status);
   }
 
-  return NextResponse.json(articles);
+  return NextResponse.json(articles, {
+    headers: { "Cache-Control": "no-store" },
+  });
 }

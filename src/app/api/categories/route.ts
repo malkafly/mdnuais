@@ -20,7 +20,9 @@ export async function GET() {
     ).length,
   }));
 
-  return NextResponse.json(enriched);
+  return NextResponse.json(enriched, {
+    headers: { "Cache-Control": "no-store" },
+  });
 }
 
 export async function PUT(request: NextRequest) {
