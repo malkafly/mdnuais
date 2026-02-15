@@ -11,6 +11,7 @@ import { TableHeader } from "@tiptap/extension-table-header";
 import Placeholder from "@tiptap/extension-placeholder";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { common, createLowlight } from "lowlight";
+import { Markdown } from "tiptap-markdown";
 import { useCallback, useEffect, useState } from "react";
 import {
   Bold,
@@ -32,6 +33,8 @@ import {
   Redo,
   Eye,
   EyeOff,
+  FileDown,
+  X,
 } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -45,6 +48,9 @@ interface DocEditorProps {
 
 export function DocEditor({ initialContent, onChange }: DocEditorProps) {
   const [showPreview, setShowPreview] = useState(false);
+  const [showMdModal, setShowMdModal] = useState(false);
+  const [mdInput, setMdInput] = useState("");
+  const [mdReplace, setMdReplace] = useState(true);
 
   const editor = useEditor({
     extensions: [
@@ -70,8 +76,12 @@ export function DocEditor({ initialContent, onChange }: DocEditorProps) {
       CodeBlockLowlight.configure({
         lowlight,
       }),
+      Markdown.configure({
+        transformPastedText: true,
+        transformCopiedText: false,
+      }),
     ],
-    content: htmlFromMarkdown(initialContent),
+    content: initialContent,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
@@ -301,6 +311,17 @@ export function DocEditor({ initialContent, onChange }: DocEditorProps) {
         <div className="flex-1" />
 
         <ToolbarButton
+          onClick={() => {
+            setMdInput("");
+            setMdReplace(true);
+            setShowMdModal(true);
+          }}
+          title={t("admin.editor.importMarkdown")}
+        >
+          <FileDown className="w-4 h-4" />
+        </ToolbarButton>
+
+        <ToolbarButton
           onClick={() => setShowPreview(!showPreview)}
           active={showPreview}
           title={t("admin.editor.preview")}
@@ -310,7 +331,7 @@ export function DocEditor({ initialContent, onChange }: DocEditorProps) {
       </div>
 
       <div className={showPreview ? "grid grid-cols-2 divide-x divide-[var(--color-border)]" : ""}>
-        <div className={showPreview ? "" : ""}>
+        <div>
           <EditorContent editor={editor} />
         </div>
         {showPreview && (
@@ -320,6 +341,26 @@ export function DocEditor({ initialContent, onChange }: DocEditorProps) {
           />
         )}
       </div>
+
+      {showMdModal && (
+        <MarkdownImportModal
+          value={mdInput}
+          onChange={setMdInput}
+          replace={mdReplace}
+          onToggleReplace={() => setMdReplace(!mdReplace)}
+          onClose={() => setShowMdModal(false)}
+          onImport={() => {
+            if (!mdInput.trim()) return;
+            if (mdReplace) {
+              editor.commands.setContent(mdInput);
+            } else {
+              editor.commands.insertContent(mdInput);
+            }
+            setShowMdModal(false);
+            toast.success(t("common.success"));
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -351,18 +392,67 @@ function ToolbarButton({
   );
 }
 
-function htmlFromMarkdown(markdown: string): string {
-  return markdown
-    .replace(/^### (.+)$/gm, "<h3>$1</h3>")
-    .replace(/^## (.+)$/gm, "<h2>$1</h2>")
-    .replace(/^# (.+)$/gm, "<h1>$1</h1>")
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/~~(.+?)~~/g, "<s>$1</s>")
-    .replace(/`(.+?)`/g, "<code>$1</code>")
-    .replace(/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" />')
-    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')
-    .replace(/^---$/gm, "<hr>")
-    .replace(/\n\n/g, "</p><p>")
-    .replace(/^(?!<[h|p|u|o|b|i|h|a|s])(.+)$/gm, "<p>$1</p>");
+function MarkdownImportModal({
+  value,
+  onChange,
+  replace,
+  onToggleReplace,
+  onClose,
+  onImport,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  replace: boolean;
+  onToggleReplace: () => void;
+  onClose: () => void;
+  onImport: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl w-full max-w-2xl mx-4 shadow-xl">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
+          <h3 className="font-semibold">{t("admin.editor.importMarkdown")}</h3>
+          <button onClick={onClose} className="p-1 rounded hover:bg-[var(--color-surface-sidebar)]">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="p-4">
+          <p className="text-sm text-[var(--color-content-muted)] mb-3">
+            {t("admin.editor.importMarkdownDesc")}
+          </p>
+          <textarea
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full h-64 px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface-sidebar)] font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+            placeholder={"# Título\n\nSeu conteúdo markdown aqui..."}
+            autoFocus
+          />
+          <label className="flex items-center gap-2 mt-3 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={replace}
+              onChange={onToggleReplace}
+              className="rounded border-[var(--color-border)]"
+            />
+            {t("admin.editor.importReplace")}
+          </label>
+        </div>
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-[var(--color-border)]">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm rounded-lg hover:bg-[var(--color-surface-sidebar)] transition-colors"
+          >
+            {t("common.cancel")}
+          </button>
+          <button
+            onClick={onImport}
+            disabled={!value.trim()}
+            className="px-4 py-2 text-sm bg-[var(--color-primary)] text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {t("admin.editor.importAction")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
