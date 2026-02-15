@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import JSZip from "jszip";
 import { isAuthenticated } from "@/lib/auth";
+import { cacheInvalidateAll } from "@/lib/cache";
 import { getCategories, saveCategories } from "@/lib/categories";
 import {
   saveArticleMeta,
@@ -266,6 +267,8 @@ export async function POST(request: NextRequest) {
         })
       );
     }
+
+    cacheInvalidateAll();
 
     return NextResponse.json(result);
   } catch (err) {

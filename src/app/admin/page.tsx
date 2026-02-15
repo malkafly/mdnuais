@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { listAllArticles } from "@/lib/articles";
 import { getCategories } from "@/lib/categories";
 import { FileText, FolderOpen, Eye, EyeOff } from "lucide-react";

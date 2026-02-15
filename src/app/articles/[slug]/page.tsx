@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { notFound } from "next/navigation";
 import { getConfig } from "@/lib/config";
 import { getCategories, getCategoryById } from "@/lib/categories";
