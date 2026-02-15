@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 import { notFound } from "next/navigation";
 import { getConfig } from "@/lib/config";
@@ -9,6 +9,7 @@ import {
   listArticlesByCategory,
   getArticleNavigation,
 } from "@/lib/articles";
+import { getManifest } from "@/lib/manifest";
 import { extractHeadings, extractTitle } from "@/lib/markdown";
 import { Navbar } from "@/components/public/Navbar";
 import { Breadcrumbs } from "@/components/public/Breadcrumbs";
@@ -21,6 +22,13 @@ import type { Metadata } from "next";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateStaticParams() {
+  const articles = await getManifest();
+  return articles
+    .filter((a) => a.status === "published")
+    .map((a) => ({ slug: a.slug }));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { buildSearchIndex } from "@/lib/search";
+import { getSearchIndex } from "@/lib/search";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const index = await buildSearchIndex();
+  const index = await getSearchIndex();
   return NextResponse.json(index, {
-    headers: { "Cache-Control": "no-store" },
+    headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" },
   });
 }

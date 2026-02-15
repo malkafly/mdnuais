@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { FileText } from "lucide-react";
-import { buildSearchIndex } from "@/lib/search";
+import { getSearchIndex } from "@/lib/search";
 import { getConfig } from "@/lib/config";
 import { Navbar } from "@/components/public/Navbar";
 import { Footer } from "@/components/public/Footer";
@@ -15,7 +15,7 @@ interface SearchPageProps {
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const { q } = await searchParams;
   const config = await getConfig();
-  const index = await buildSearchIndex();
+  const index = await getSearchIndex();
 
   const results = q
     ? index.filter(

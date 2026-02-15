@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getConfig, saveConfig } from "@/lib/config";
 import { isAuthenticated } from "@/lib/auth";
 import { cacheInvalidateAll } from "@/lib/cache";
@@ -22,5 +23,6 @@ export async function PUT(request: NextRequest) {
   const body = (await request.json()) as SiteConfig;
   await saveConfig(body);
   cacheInvalidateAll();
+  revalidatePath("/", "layout");
   return NextResponse.json({ success: true });
 }

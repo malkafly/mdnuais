@@ -1,6 +1,7 @@
 import { ArticleMeta, ArticleStatus } from "@/types";
-import { getObject, putObject, deleteObject, listObjects } from "./storage";
+import { getObject, putObject, deleteObject } from "./storage";
 import { cacheGet, cacheSet, cacheInvalidate, cacheInvalidatePrefix } from "./cache";
+import { getManifest, updateManifestEntry, removeManifestEntry } from "./manifest";
 
 export async function getArticleMeta(slug: string): Promise<ArticleMeta | null> {
   const cacheKey = `article-meta:${slug}`;
@@ -17,6 +18,7 @@ export async function getArticleMeta(slug: string): Promise<ArticleMeta | null> 
 
 export async function saveArticleMeta(slug: string, meta: ArticleMeta): Promise<void> {
   await putObject(`docs/${slug}.json`, JSON.stringify(meta, null, 2), "application/json");
+  await updateManifestEntry(slug, meta);
   cacheInvalidate(`article-meta:${slug}`);
   cacheInvalidatePrefix("articles-list");
 }
@@ -42,6 +44,7 @@ export async function deleteArticle(slug: string): Promise<void> {
     deleteObject(`docs/${slug}.md`),
     deleteObject(`docs/${slug}.json`),
   ]);
+  await removeManifestEntry(slug);
   cacheInvalidate(`article-meta:${slug}`);
   cacheInvalidate(`article-content:${slug}`);
   cacheInvalidatePrefix("articles-list");
@@ -53,22 +56,7 @@ export async function listAllArticles(): Promise<ArticleMeta[]> {
   const cached = cacheGet<ArticleMeta[]>(cacheKey);
   if (cached) return cached;
 
-  const keys = await listObjects("docs/");
-  const jsonKeys = keys.filter((k) => k.endsWith(".json"));
-
-  const articles: ArticleMeta[] = [];
-  for (const key of jsonKeys) {
-    const raw = await getObject(key);
-    if (raw) {
-      try {
-        articles.push(JSON.parse(raw) as ArticleMeta);
-      } catch {
-        /* skip malformed */
-      }
-    }
-  }
-
-  articles.sort((a, b) => a.order - b.order);
+  const articles = await getManifest();
   cacheSet(cacheKey, articles);
   return articles;
 }

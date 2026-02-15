@@ -146,3 +146,10 @@ export interface CacheEntry<T> {
   data: T;
   timestamp: number;
 }
+
+// === Manifest ===
+
+export interface Manifest {
+  articles: ArticleMeta[];
+  updatedAt: string;
+}

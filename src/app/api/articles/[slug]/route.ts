@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import {
   getArticleMeta,
   getArticleContent,
@@ -6,14 +7,37 @@ import {
   saveArticleContent,
   deleteArticle,
 } from "@/lib/articles";
+import { getCategories } from "@/lib/categories";
 import { isAuthenticated } from "@/lib/auth";
 import { cacheInvalidateAll } from "@/lib/cache";
+import { rebuildSearchIndex } from "@/lib/search";
 import { ArticleMeta } from "@/types";
 
 export const dynamic = "force-dynamic";
 
 interface RouteParams {
   params: Promise<{ slug: string }>;
+}
+
+async function revalidateArticlePages(slug: string, meta: ArticleMeta | null) {
+  revalidatePath(`/articles/${slug}`);
+  revalidatePath("/");
+
+  if (meta?.category) {
+    const categoriesData = await getCategories();
+    const cat = categoriesData.categories.find((c) => c.id === meta.category);
+    if (cat) {
+      if (cat.parentId) {
+        const parent = categoriesData.categories.find((c) => c.id === cat.parentId);
+        if (parent) {
+          revalidatePath(`/categories/${parent.slug}/${cat.slug}`);
+          revalidatePath(`/categories/${parent.slug}`);
+        }
+      } else {
+        revalidatePath(`/categories/${cat.slug}`);
+      }
+    }
+  }
 }
 
 export async function GET(_request: NextRequest, { params }: RouteParams) {
@@ -51,6 +75,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   }
 
   cacheInvalidateAll();
+  await revalidateArticlePages(slug, meta ?? null);
+  rebuildSearchIndex().catch(console.error);
+
   return NextResponse.json({ success: true });
 }
 
@@ -61,7 +88,11 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   }
 
   const { slug } = await params;
+  const meta = await getArticleMeta(slug);
   await deleteArticle(slug);
   cacheInvalidateAll();
+  await revalidateArticlePages(slug, meta);
+  rebuildSearchIndex().catch(console.error);
+
   return NextResponse.json({ success: true });
 }

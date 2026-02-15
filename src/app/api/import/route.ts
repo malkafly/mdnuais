@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import JSZip from "jszip";
 import { isAuthenticated } from "@/lib/auth";
 import { cacheInvalidateAll } from "@/lib/cache";
+import { rebuildManifest } from "@/lib/manifest";
+import { rebuildSearchIndex } from "@/lib/search";
 import { getCategories, saveCategories } from "@/lib/categories";
 import {
   saveArticleMeta,
@@ -349,6 +352,9 @@ export async function POST(request: NextRequest) {
     }
 
     cacheInvalidateAll();
+    await rebuildManifest();
+    rebuildSearchIndex().catch(console.error);
+    revalidatePath("/", "layout");
 
     return NextResponse.json(result);
   } catch (err) {

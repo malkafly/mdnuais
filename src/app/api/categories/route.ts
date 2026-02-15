@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getCategories, saveCategories, getSubcategoryIds } from "@/lib/categories";
 import { listAllArticles } from "@/lib/articles";
 import { isAuthenticated } from "@/lib/auth";
@@ -44,5 +45,6 @@ export async function PUT(request: NextRequest) {
   const body = (await request.json()) as CategoriesData;
   await saveCategories(body);
   cacheInvalidateAll();
+  revalidatePath("/", "layout");
   return NextResponse.json({ success: true });
 }

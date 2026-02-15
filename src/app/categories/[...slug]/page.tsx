@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 import { notFound } from "next/navigation";
 import { getConfig } from "@/lib/config";
@@ -19,6 +19,22 @@ import type { Category } from "@/types";
 
 interface PageProps {
   params: Promise<{ slug: string[] }>;
+}
+
+export async function generateStaticParams() {
+  const { categories } = await getCategories();
+  const params: { slug: string[] }[] = [];
+
+  const topLevel = categories.filter((c) => !c.parentId);
+  for (const cat of topLevel) {
+    params.push({ slug: [cat.slug] });
+    const subs = categories.filter((c) => c.parentId === cat.id);
+    for (const sub of subs) {
+      params.push({ slug: [cat.slug, sub.slug] });
+    }
+  }
+
+  return params;
 }
 
 function resolveCategory(

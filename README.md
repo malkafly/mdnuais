@@ -9,9 +9,10 @@ Armazena tudo (markdown, imagens, configurações) em S3/R2, tem editor rico com
 ## Features
 
 **Interface pública**
-- Sidebar de navegação com hierarquia colapsável e links externos
+- Categorias e subcategorias com grid responsivo
 - Table of Contents (TOC) com scroll spy automático
-- Breadcrumbs e navegação anterior/próximo
+- Breadcrumbs hierárquicos (Home > Categoria > Subcategoria > Artigo)
+- Navegação anterior/próximo entre artigos da mesma categoria
 - Headings clicáveis com cópia de link âncora
 - Syntax highlighting com Shiki (temas GitHub Light/Dark)
 - Botão copiar código em blocos de código
@@ -23,15 +24,22 @@ Armazena tudo (markdown, imagens, configurações) em S3/R2, tem editor rico com
 
 **Painel admin**
 - Autenticação simples por token (cookie httpOnly)
-- Dashboard com estatísticas (total de docs e seções)
-- CRUD completo de documentos e seções
+- Dashboard com estatísticas (total de artigos e categorias)
+- CRUD completo de artigos e categorias com suporte a subcategorias
+- Hierarquia visual de categorias com indentação e seletor de categoria pai
 - Editor Tiptap com toolbar completa (bold, italic, headings, listas, citações, código, tabelas, links, imagens)
 - Paste de imagem via `Ctrl+V` e drag-and-drop (upload direto pro S3/R2)
-- Preview ao vivo (split view)
-- Drag-and-drop para reordenar documentos e seções
-- Links externos no menu de navegação
+- Importação em massa via ZIP (com suporte a subcategorias)
 - Configurações do site (nome, logo, favicon, cores, footer, links sociais, SEO)
 - Atalho `Ctrl+S` para salvar, indicador de alterações não salvas
+
+**Importação via ZIP**
+- Formato simples: `zip > categoria > artigos.md`
+- Formato com subcategorias: `zip > categoria > subcategoria > artigos.md`
+- Formato misto: categorias com e sem subcategorias no mesmo ZIP
+- Detecção automática de pasta wrapper (raiz)
+- Estratégias de conflito: pular existentes ou sobrescrever
+- Status padrão configurável (publicado/rascunho)
 
 **Internacionalização**
 - Interface em português (PT) por padrão
@@ -51,7 +59,6 @@ Armazena tudo (markdown, imagens, configurações) em S3/R2, tem editor rico com
 | Syntax Highlight | Shiki |
 | Busca | Fuse.js (client-side) |
 | Storage | S3-compatible (AWS S3 / Cloudflare R2) via AWS SDK v3 |
-| Drag & Drop | @dnd-kit |
 | Ícones | Lucide React |
 | Toasts | Sonner |
 | Fonts | Inter + JetBrains Mono (next/font) |
@@ -119,33 +126,39 @@ Acesse `http://localhost:3000/admin/login` e entre com a senha definida em `ADMI
 mdnuais/
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx                  # Root layout (fonts, theme, toaster)
-│   │   ├── page.tsx                    # Redirect pro primeiro doc
-│   │   ├── not-found.tsx               # Página 404
-│   │   ├── docs/[...slug]/page.tsx     # Renderiza markdown público
-│   │   ├── search/page.tsx             # Resultados de busca
+│   │   ├── layout.tsx                    # Root layout (fonts, theme, toaster)
+│   │   ├── page.tsx                      # Home com grid de categorias
+│   │   ├── not-found.tsx                 # Página 404
+│   │   ├── categories/[...slug]/page.tsx # Categoria ou subcategoria
+│   │   ├── articles/[slug]/page.tsx      # Renderiza artigo markdown
+│   │   ├── search/page.tsx               # Resultados de busca
 │   │   ├── admin/
-│   │   │   ├── layout.tsx              # Layout admin (sidebar)
-│   │   │   ├── page.tsx                # Dashboard
-│   │   │   ├── login/page.tsx          # Login
-│   │   │   ├── docs/page.tsx           # Lista/árvore de docs
-│   │   │   ├── docs/new/page.tsx       # Criar doc/seção/link externo
-│   │   │   ├── docs/edit/[...slug]/    # Editor do documento
-│   │   │   └── settings/page.tsx       # Configurações do site
+│   │   │   ├── layout.tsx                # Layout admin (sidebar)
+│   │   │   ├── page.tsx                  # Dashboard
+│   │   │   ├── login/page.tsx            # Login
+│   │   │   ├── categories/page.tsx       # Gerenciar categorias e subcategorias
+│   │   │   ├── docs/page.tsx             # Lista de artigos
+│   │   │   ├── docs/new/page.tsx         # Criar artigo
+│   │   │   ├── docs/edit/[...slug]/      # Editor do artigo
+│   │   │   ├── import/page.tsx           # Importar conteúdo via ZIP
+│   │   │   └── settings/page.tsx         # Configurações do site
 │   │   └── api/
-│   │       ├── auth/login/route.ts     # POST - login
-│   │       ├── auth/logout/route.ts    # POST - logout
-│   │       ├── docs/route.ts           # GET - lista docs (sidebar)
-│   │       ├── docs/[...slug]/route.ts # GET/PUT/DELETE - doc
-│   │       ├── reorder/route.ts        # PUT - reordenar sidebar
-│   │       ├── upload/route.ts         # POST - upload de imagem
-│   │       ├── config/route.ts         # GET/PUT - config.json
-│   │       ├── search-index/route.ts   # GET - índice de busca
-│   │       └── assets/images/[...path] # GET - servir imagens do S3
+│   │       ├── auth/login/route.ts       # POST - login
+│   │       ├── auth/logout/route.ts      # POST - logout
+│   │       ├── articles/route.ts         # GET - lista artigos
+│   │       ├── articles/[slug]/route.ts  # GET/PUT/DELETE - artigo
+│   │       ├── categories/route.ts       # GET/PUT - categorias
+│   │       ├── import/route.ts           # POST - importação via ZIP
+│   │       ├── upload/route.ts           # POST - upload de imagem
+│   │       ├── config/route.ts           # GET/PUT - config.json
+│   │       ├── search-index/route.ts     # GET - índice de busca
+│   │       └── assets/images/[...path]   # GET - servir imagens do S3
 │   ├── components/
-│   │   ├── public/                     # Componentes da interface pública
-│   │   │   ├── Sidebar.tsx
-│   │   │   ├── Header.tsx
+│   │   ├── public/                       # Componentes da interface pública
+│   │   │   ├── Navbar.tsx
+│   │   │   ├── Hero.tsx
+│   │   │   ├── CategoryGrid.tsx
+│   │   │   ├── ArticleList.tsx
 │   │   │   ├── Footer.tsx
 │   │   │   ├── TableOfContents.tsx
 │   │   │   ├── Breadcrumbs.tsx
@@ -156,24 +169,25 @@ mdnuais/
 │   │   │   ├── ShareButton.tsx
 │   │   │   ├── ThemeToggle.tsx
 │   │   │   └── ThemeProvider.tsx
-│   │   └── admin/                      # Componentes do painel admin
+│   │   └── admin/                        # Componentes do painel admin
 │   │       ├── AdminSidebar.tsx
-│   │       ├── DocEditor.tsx
-│   │       └── DocTree.tsx
+│   │       └── DocEditor.tsx
 │   ├── lib/
-│   │   ├── storage.ts                  # Adapter S3/R2
-│   │   ├── cache.ts                    # Cache in-memory com TTL
-│   │   ├── auth.ts                     # Autenticação por token
-│   │   ├── config.ts                   # Read/write config.json e sidebar.json
-│   │   ├── markdown.ts                 # Parsing, headings, strip
-│   │   ├── navigation.ts              # Prev/next, breadcrumbs
-│   │   ├── search.ts                   # Build do índice de busca
-│   │   └── i18n.ts                     # Internacionalização
+│   │   ├── storage.ts                    # Adapter S3/R2
+│   │   ├── cache.ts                      # Cache in-memory com TTL
+│   │   ├── auth.ts                       # Autenticação por token
+│   │   ├── config.ts                     # Read/write config.json
+│   │   ├── categories.ts                 # CRUD categorias + helpers subcategoria
+│   │   ├── articles.ts                   # CRUD artigos
+│   │   ├── markdown.ts                   # Parsing, headings, strip
+│   │   ├── search.ts                     # Build do índice de busca
+│   │   ├── sanitize-svg.ts              # Sanitização de SVG
+│   │   └── i18n.ts                       # Internacionalização
 │   ├── locales/
-│   │   └── pt.ts                       # Dicionário português
+│   │   └── pt.ts                         # Dicionário português
 │   ├── types/
-│   │   └── index.ts                    # Interfaces TypeScript
-│   └── middleware.ts                   # Proteção das rotas /admin/*
+│   │   └── index.ts                      # Interfaces TypeScript
+│   └── middleware.ts                     # Proteção das rotas /admin/*
 ├── .env.example
 ├── tailwind.config.ts
 ├── next.config.mjs
@@ -189,19 +203,62 @@ Todos os arquivos vivem no bucket S3/R2. Não há filesystem local para conteúd
 
 ```
 {STORAGE_BASE_PATH}/
-├── config.json              # Configurações do site
-├── sidebar.json             # Estrutura de navegação
+├── config.json                # Configurações do site
+├── categories.json            # Categorias e subcategorias
 ├── docs/
-│   ├── getting-started/
-│   │   ├── index.md
-│   │   └── installation.md
-│   └── api-reference/
-│       ├── index.md
-│       └── endpoints.md
+│   ├── artigo-1.json          # Metadata do artigo
+│   ├── artigo-1.md            # Conteúdo markdown
+│   ├── artigo-2.json
+│   └── artigo-2.md
 └── assets/
     └── images/
         ├── logo.png
         └── 1707912345-abc123.png
+```
+
+### categories.json
+
+Define as categorias e subcategorias. Subcategorias possuem `parentId` apontando para a categoria pai:
+
+```json
+{
+  "categories": [
+    {
+      "id": "uuid-1",
+      "title": "Financeiro",
+      "description": "Módulos financeiros",
+      "slug": "financeiro",
+      "icon": "<svg>...</svg>",
+      "iconBgColor": "#EEF2FF",
+      "order": 0,
+      "parentId": null
+    },
+    {
+      "id": "uuid-2",
+      "title": "Contas a Pagar",
+      "description": "",
+      "slug": "contas-a-pagar",
+      "icon": "<svg>...</svg>",
+      "iconBgColor": "#FEF3C7",
+      "order": 0,
+      "parentId": "uuid-1"
+    }
+  ]
+}
+```
+
+### Metadata do artigo (docs/*.json)
+
+```json
+{
+  "title": "Como cadastrar uma conta",
+  "slug": "como-cadastrar-conta",
+  "category": "uuid-2",
+  "status": "published",
+  "createdAt": "2025-01-15T10:00:00.000Z",
+  "updatedAt": "2025-01-15T10:00:00.000Z",
+  "order": 0
+}
 ```
 
 ### config.json
@@ -234,44 +291,72 @@ Define a identidade visual e metadata do site:
 }
 ```
 
-### sidebar.json
+---
 
-Define a hierarquia de navegação. Suporta documentos, seções com filhos e links externos:
+## Importação via ZIP
 
-```json
-{
-  "items": [
-    {
-      "title": "Primeiros Passos",
-      "slug": "getting-started",
-      "children": [
-        { "title": "Introdução", "slug": "getting-started/index" },
-        { "title": "Instalação", "slug": "getting-started/installation" }
-      ]
-    },
-    {
-      "title": "GitHub",
-      "slug": "github",
-      "url": "https://github.com/meu/repo",
-      "external": true
-    }
-  ]
-}
+Importe conteúdo em massa pelo painel admin. A estrutura do ZIP é detectada automaticamente:
+
+### Formato simples (sem subcategorias)
+
 ```
+manual.zip/
+├── financeiro/
+│   ├── artigo-1.md
+│   └── artigo-2.md
+├── recursos-humanos/
+│   └── artigo-3.md
+```
+
+### Formato com subcategorias
+
+```
+manual.zip/
+├── financeiro/
+│   ├── contas-a-pagar/
+│   │   ├── artigo-1.md
+│   │   └── artigo-2.md
+│   ├── contas-a-receber/
+│   │   └── artigo-3.md
+│   └── visao-geral.md          ← artigo direto na categoria
+├── recursos-humanos/
+│   ├── artigo-4.md
+│   └── artigo-5.md
+```
+
+- Pastas de 1o nível = **categorias**
+- Subpastas = **subcategorias** (vinculadas à categoria pai)
+- Arquivos `.md` = **artigos** (vinculados à categoria/subcategoria mais próxima)
+- O título do artigo é extraído do primeiro `# Heading` do markdown, ou gerado a partir do nome do arquivo
+- Nomes de pasta em `kebab-case` são convertidos para Title Case automaticamente
 
 ---
 
-## API Routes
+## Rotas
+
+### Páginas públicas
+
+| Rota | Descrição |
+|------|-----------|
+| `/` | Home com grid de categorias |
+| `/categories/{slug}` | Categoria (mostra subcategorias e/ou artigos) |
+| `/categories/{slug}/{sub}` | Subcategoria (mostra artigos) |
+| `/articles/{slug}` | Artigo com TOC e navegação |
+| `/search` | Resultados de busca |
+
+### API
 
 | Rota | Método | Auth | Descrição |
 |------|--------|------|-----------|
 | `/api/auth/login` | POST | - | Valida token, seta cookie |
 | `/api/auth/logout` | POST | - | Remove cookie |
-| `/api/docs` | GET | - | Lista docs (sidebar.json) |
-| `/api/docs/[...slug]` | GET | - | Retorna conteúdo do .md |
-| `/api/docs/[...slug]` | PUT | Admin | Salva .md |
-| `/api/docs/[...slug]` | DELETE | Admin | Remove .md |
-| `/api/reorder` | PUT | Admin | Atualiza sidebar.json |
+| `/api/categories` | GET | - | Lista categorias com contagem de artigos |
+| `/api/categories` | PUT | Admin | Salva categorias (incluindo subcategorias) |
+| `/api/articles` | GET | - | Lista artigos (filtrável por categoria/status) |
+| `/api/articles/[slug]` | GET | - | Retorna artigo (metadata + conteúdo) |
+| `/api/articles/[slug]` | PUT | Admin | Salva artigo |
+| `/api/articles/[slug]` | DELETE | Admin | Remove artigo |
+| `/api/import` | POST | Admin | Importação via ZIP |
 | `/api/upload` | POST | Admin | Upload de imagem (max 5MB) |
 | `/api/config` | GET | - | Retorna config.json |
 | `/api/config` | PUT | Admin | Atualiza config.json |
