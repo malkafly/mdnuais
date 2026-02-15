@@ -17,6 +17,9 @@ export interface SiteConfig {
     website?: string;
     twitter?: string;
     linkedin?: string;
+    facebook?: string;
+    instagram?: string;
+    whatsapp?: string;
   };
   metadata: {
     title: string;

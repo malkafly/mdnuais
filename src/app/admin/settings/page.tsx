@@ -636,6 +636,39 @@ export default function SettingsPage() {
               }
               placeholder="https://linkedin.com/..."
             />
+            <SocialInput
+              label={t("admin.settings.facebook")}
+              value={config.socialLinks.facebook || ""}
+              onChange={(v) =>
+                setConfig((prev) => ({
+                  ...prev,
+                  socialLinks: { ...prev.socialLinks, facebook: v },
+                }))
+              }
+              placeholder="https://facebook.com/..."
+            />
+            <SocialInput
+              label={t("admin.settings.instagram")}
+              value={config.socialLinks.instagram || ""}
+              onChange={(v) =>
+                setConfig((prev) => ({
+                  ...prev,
+                  socialLinks: { ...prev.socialLinks, instagram: v },
+                }))
+              }
+              placeholder="https://instagram.com/..."
+            />
+            <SocialInput
+              label={t("admin.settings.whatsapp")}
+              value={config.socialLinks.whatsapp || ""}
+              onChange={(v) =>
+                setConfig((prev) => ({
+                  ...prev,
+                  socialLinks: { ...prev.socialLinks, whatsapp: v },
+                }))
+              }
+              placeholder="https://wa.me/5511999999999"
+            />
           </div>
         </Section>
 
