@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, FileText, FolderOpen, Settings, LogOut, Menu, X, ExternalLink } from "lucide-react";
+import { LayoutDashboard, FileText, FolderOpen, Settings, LogOut, Menu, X, ExternalLink, Upload } from "lucide-react";
 import { ThemeToggle } from "@/components/public/ThemeToggle";
 import { t } from "@/lib/i18n";
 
@@ -11,6 +11,7 @@ const navItems = [
   { href: "/admin", label: "admin.sidebar.dashboard", icon: LayoutDashboard },
   { href: "/admin/docs", label: "admin.sidebar.articles", icon: FileText },
   { href: "/admin/categories", label: "admin.sidebar.categories", icon: FolderOpen },
+  { href: "/admin/import", label: "admin.sidebar.import", icon: Upload },
   { href: "/admin/settings", label: "admin.sidebar.settings", icon: Settings },
 ];
 
