@@ -20,7 +20,7 @@ export function Navbar({ config }: NavbarProps) {
         <div className="flex items-center justify-between h-20">
           <Link href="/" className="flex items-center gap-3 font-semibold text-lg shrink-0">
             {config.logo && (
-              <img src={config.logo} alt={config.name} className="h-12 w-auto object-contain" />
+              <img src={config.logo} alt={config.name} className="h-12 w-auto object-contain dark:brightness-0 dark:invert" />
             )}
             <span>{config.name}</span>
           </Link>

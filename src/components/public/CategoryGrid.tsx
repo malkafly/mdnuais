@@ -1,15 +1,13 @@
 import Link from "next/link";
 import { CategoryWithCount } from "@/types";
-import DOMPurify from "isomorphic-dompurify";
+import { sanitizeSvg } from "@/lib/sanitize-svg";
 
 interface CategoryGridProps {
   categories: CategoryWithCount[];
 }
 
 function SafeSvgIcon({ svg, className }: { svg: string; className?: string }) {
-  const clean = DOMPurify.sanitize(svg, {
-    USE_PROFILES: { svg: true, svgFilters: true },
-  });
+  const clean = sanitizeSvg(svg);
   return <div className={className} dangerouslySetInnerHTML={{ __html: clean }} />;
 }
 

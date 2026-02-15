@@ -6,7 +6,7 @@ import { Navbar } from "@/components/public/Navbar";
 import { Breadcrumbs } from "@/components/public/Breadcrumbs";
 import { ArticleList } from "@/components/public/ArticleList";
 import { Footer } from "@/components/public/Footer";
-import DOMPurify from "isomorphic-dompurify";
+import { sanitizeSvg } from "@/lib/sanitize-svg";
 import type { Metadata } from "next";
 
 interface PageProps {
@@ -46,7 +46,7 @@ export default async function CategoryPage({ params }: PageProps) {
   ];
 
   const cleanIcon = category.icon
-    ? DOMPurify.sanitize(category.icon, { USE_PROFILES: { svg: true, svgFilters: true } })
+    ? sanitizeSvg(category.icon)
     : "";
 
   return (
