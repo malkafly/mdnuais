@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, Plus, Trash2, Upload } from "lucide-react";
+import { Save, Plus, Trash2, Upload, RefreshCw } from "lucide-react";
 import { SiteConfig, FooterLink, NavbarLink, NavbarCta, HeroConfig, NavbarConfig } from "@/types";
 import { t } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -36,6 +36,7 @@ export default function SettingsPage() {
   const [config, setConfig] = useState<SiteConfig>(defaultConfig);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [purging, setPurging] = useState(false);
 
   useEffect(() => {
     fetch("/api/config")
@@ -66,6 +67,19 @@ export default function SettingsPage() {
       toast.error(t("common.error"));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePurgeCache = async () => {
+    setPurging(true);
+    try {
+      const res = await fetch("/api/cache/purge", { method: "POST" });
+      if (!res.ok) throw new Error();
+      toast.success(t("admin.settings.cachePurged"));
+    } catch {
+      toast.error(t("common.error"));
+    } finally {
+      setPurging(false);
     }
   };
 
@@ -663,6 +677,21 @@ export default function SettingsPage() {
               />
             </div>
           </div>
+        </Section>
+
+        {/* Cache */}
+        <Section title={t("admin.settings.cache")}>
+          <p className="text-sm text-[var(--color-content-muted)] mb-3">
+            {t("admin.settings.cacheDescription")}
+          </p>
+          <button
+            onClick={handlePurgeCache}
+            disabled={purging}
+            className="flex items-center gap-2 px-4 py-2 text-sm bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${purging ? "animate-spin" : ""}`} />
+            {purging ? t("common.loading") : t("admin.settings.purgeCache")}
+          </button>
         </Section>
       </div>
     </div>

@@ -181,6 +181,10 @@ const pt = {
       metaDescription: "Descrição (SEO)",
       metaDescriptionPlaceholder: "Base de conhecimento oficial",
       saved: "Configurações salvas com sucesso",
+      cache: "Cache",
+      cacheDescription: "Limpe todo o cache do servidor para forçar a atualização imediata de todas as páginas públicas.",
+      purgeCache: "Purgar cache",
+      cachePurged: "Cache purgado com sucesso",
     },
   },
   share: {
