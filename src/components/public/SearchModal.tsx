@@ -156,7 +156,7 @@ export function SearchModal() {
               onClick={() => navigate(result.slug)}
               className={`flex items-start gap-3 w-full px-4 py-3 text-left transition-colors ${
                 i === selectedIndex
-                  ? "bg-[var(--color-primary)] bg-opacity-10"
+                  ? "bg-blue-500/10"
                   : "hover:bg-[var(--color-surface-sidebar)]"
               }`}
             >

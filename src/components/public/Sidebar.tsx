@@ -110,7 +110,7 @@ function SidebarSection({
         onClick={onNavigate}
         className={`block px-3 py-1.5 rounded-md text-sm transition-colors ${
           isActive
-            ? "bg-[var(--color-primary)] bg-opacity-10 text-[var(--color-primary)] font-medium"
+            ? "bg-blue-500/15 text-blue-400 font-medium"
             : "hover:bg-[var(--color-surface)] text-[var(--color-content-muted)]"
         }`}
       >

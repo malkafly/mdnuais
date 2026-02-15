@@ -342,7 +342,7 @@ function ToolbarButton({
       title={title}
       className={`p-1.5 rounded transition-colors ${
         active
-          ? "bg-[var(--color-primary)] bg-opacity-10 text-[var(--color-primary)]"
+          ? "bg-blue-500/15 text-blue-400"
           : "text-[var(--color-content-muted)] hover:text-[var(--color-content)] hover:bg-[var(--color-surface)]"
       }`}
     >

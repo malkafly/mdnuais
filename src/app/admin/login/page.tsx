@@ -41,8 +41,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-[var(--color-surface)]">
       <div className="w-full max-w-sm p-8">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 bg-[var(--color-primary)] bg-opacity-10 rounded-full flex items-center justify-center mb-4">
-            <Lock className="w-6 h-6 text-[var(--color-primary)]" />
+          <div className="w-12 h-12 bg-blue-500/15 rounded-full flex items-center justify-center mb-4">
+            <Lock className="w-6 h-6 text-blue-400" />
           </div>
           <h1 className="text-xl font-semibold">{t("admin.login.title")}</h1>
         </div>

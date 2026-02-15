@@ -33,7 +33,7 @@ const config: Config = {
       maxWidth: {
         content: "800px",
       },
-      width: {
+      spacing: {
         sidebar: "260px",
         toc: "220px",
       },
